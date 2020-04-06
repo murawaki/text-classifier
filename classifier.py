@@ -83,6 +83,7 @@ if __name__ == "__main__":
                 num_ignored += 1
                 continue
             wordlists, rawsentences = to_text(juman, etree, target_pos)
+            page["rawsentences"] = rawsentences
 
             # apply classifier
             classes, snippets = classify(wordlists, rawsentences, keywords)

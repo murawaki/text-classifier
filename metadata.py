@@ -5,6 +5,7 @@ Requirements:
 
 """
 
+import sys
 import os
 import pathlib
 import argparse
@@ -48,15 +49,19 @@ if __name__ == "__main__":
             ja_filepath = data_dir / "html" / country / "ja_translated" / domain / url_filename.with_suffix(".html")
             xml_filepath = data_dir / "xml" / country / "ja_translated" / domain / url_filename.with_suffix(".xml")
 
-            # extract metadata by reading the files
-            orig_url = extract_url_from_url_file(url_filepath)
+            try:
+                # extract metadata by reading the files
+                orig_url = extract_url_from_url_file(url_filepath)
 
-            orig_title = extract_title_from_html_file(orig_filepath)
-            ja_title = extract_title_from_html_file(ja_filepath)
+                orig_title = extract_title_from_html_file(orig_filepath)
+                ja_title = extract_title_from_html_file(ja_filepath)
 
-            orig_timestamp = extract_timestamp_from_file(orig_filepath)
-            ja_timestamp = extract_timestamp_from_file(ja_filepath)
-            xml_timestamp = extract_timestamp_from_file(xml_filepath)
+                orig_timestamp = extract_timestamp_from_file(orig_filepath)
+                ja_timestamp = extract_timestamp_from_file(ja_filepath)
+                xml_timestamp = extract_timestamp_from_file(xml_filepath)
+            except:
+                sys.stderr.write(f"file not found error...skip: {line}")
+                continue
 
             # append the metadata
             meta = {
@@ -80,4 +85,3 @@ if __name__ == "__main__":
             # output the metadata as a JSONL file
             json.dump(meta, of, ensure_ascii=False)
             of.write("\n")
-
