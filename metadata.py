@@ -31,14 +31,14 @@ def extract_timestamp_from_file(filepath: pathlib.Path) -> str:
 
 if __name__ == "__main__":
     argparser = argparse.ArgumentParser()
-    argparser.add_argument("-d", "--directory", default=".", help="Path prefix of URL files")
+    argparser.add_argument("-d", "--directory", default=".", help="Path prefix of XML files")
     argparser.add_argument("url_files", help="File paths of input URL files (*.url; one path per line)")
     argparser.add_argument("output_file", help="Output file (JSONL)")
     args = argparser.parse_args()
 
     with open(args.url_files, "r") as f, open(args.output_file, "w") as of:
         for line in f:
-            # decompose a url, which is like `./html/<country>/orig/<domain>/<filename>`, into its parts
+            # decompose a url, which is like `./xml/<country>/ja_translated/<domain>/<filename>`, into its parts
             _, country, _, domain, *url_parts = pathlib.Path(line.strip()).parts
             url_filename = pathlib.Path(*url_parts)
 
