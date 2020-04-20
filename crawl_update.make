@@ -2,7 +2,8 @@
 PYTHON := nice -19 python3
 DATA_DIR := /mnt/hinoki/share/covid19
 INPUT_DIR := /mnt/hinoki/share/covid19/run
-OUTPUT_DIR := /mnt/hinoki/murawaki/covid19
+OUTPUT_DIR := /mnt/hinoki/share/covid19/topics
+BLACKLIST := $(DATA_DIR)/url_black_list.txt
 OUTPUT := $(OUTPUT_DIR)/output.jsonl
 
 DAILY_INPUTS = $(wildcard $(INPUT_DIR)/new-xml-files-*.txt)
@@ -25,8 +26,8 @@ endef
 $(foreach base_name,$(BASE_NAMES), \
   $(eval $(call each_task,$(base_name))))
 
-$(OUTPUT) : $(OUTPUTS)
-	echo $(OUTPUTS) | tr ' ' '\n' | sort | xargs cat > $@
+$(OUTPUT) : $(OUTPUTS) $(BLACKLIST)
+	$(PYTHON) merge.py -b $(BLACKLIST) -o $(OUTPUT) $(OUTPUTS)
 
 all : $(OUTPUT)
 
