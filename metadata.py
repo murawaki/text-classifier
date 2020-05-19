@@ -37,9 +37,9 @@ def shorten(title):
     title = title.split('_')[0].split('|')[0]     # 特定の記号で繋がれるsuffixは除く
     title = title.replace('中華人民共和国', '中国')
     title = re.sub(DATE_PATTERN, r'\1月\2日', title)
-    for pat in TIME_PATTERN + SOURCES:
+    for pat in TIME_PATTERNS + SOURCES:
         title = re.sub(pat, '', title)
-    for pat in COVID_PATTERN:
+    for pat in COVID_PATTERNS:
         title = re.sub(pat, 'コロナ', title)
     return title.strip()
 
