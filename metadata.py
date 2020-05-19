@@ -12,7 +12,19 @@ import argparse
 import bs4
 import json
 import datetime
+import re
+import unicodedata
 from collections import defaultdict
+
+
+COVID_PATTERNS = [re.compile(r'(新型)*コロナウ[イィ]ルス(感染症|肺炎)*'),
+                  re.compile(r'COVID[-−]19感染症')]
+DATE_PATTERN = re.compile(r'2020年([1-9]|1[0-2])月([1-9]|1[0-9]|2[0-9]|3[0-1])日')
+SOURCES = [re.compile(r'[-−] Yahoo! JAPAN')]
+TIME_PATTERNS = [re.compile(r'[<\(\[\{]第.+?回[>\)\]\}]'),
+                 re.compile(r'第.+?回'),
+                 re.compile(r'[<\(\[\{]令和.+?年度*[>\)\]\}]'),
+                 re.compile(r'令和.+?年度*')]
 
 
 def extract_url_from_url_file(filepath: pathlib.Path) -> str:
@@ -20,9 +32,22 @@ def extract_url_from_url_file(filepath: pathlib.Path) -> str:
         return f.readline().strip()
 
 
+def shorten(title):
+    title = unicodedata.normalize("NFKC", title)  # 全角->半角(正規化)
+    title = title.split('_')[0].split('|')[0]     # 特定の記号で繋がれるsuffixは除く
+    title = title.replace('中華人民共和国', '中国')
+    title = re.sub(DATE_PATTERN, r'\1月\2日', title)
+    for pat in TIME_PATTERNS + SOURCES:
+        title = re.sub(pat, '', title)
+    for pat in COVID_PATTERNS:
+        title = re.sub(pat, 'コロナ', title)
+    return title.strip()
+
+
 def extract_title_from_html_file(filepath: pathlib.Path) -> str:
     with filepath.open() as f:
-        return bs4.BeautifulSoup(f.read(), "html.parser").title.string
+        title = bs4.BeautifulSoup(f.read(), "html.parser").title.string
+        return shorten(title)
 
 
 def extract_timestamp_from_file(filepath: pathlib.Path) -> str:
