@@ -6,11 +6,15 @@ from xml.etree import ElementTree
 import unicodedata
 import json
 from collections import defaultdict
+
 from pyknp import Juman
+
+from shorten_sentence import shorten
 
 logger = logging.getLogger(__name__)
 
 target_pos = ["名詞" ,"動詞", "未定義語"]
+
 
 def read_keywords(keyword_file):
     keywords = {}
@@ -18,6 +22,7 @@ def read_keywords(keyword_file):
         clss, *words = line.strip().split()
         keywords[clss] = [unicodedata.normalize("NFKC", k) for k in words]
     return keywords
+
 
 def to_text(juman, standard_format, target_pos=[]):
     "Convert standard format into a simple text (list of word lists)"
@@ -33,6 +38,7 @@ def to_text(juman, standard_format, target_pos=[]):
         rawsentences.append(rawsentence.text)
     return wordlists, rawsentences
 
+
 def classify(text, rawtext, keyword_dict):
     "Classify a text into pre-defined classes"
     classes = {}
@@ -47,8 +53,9 @@ def classify(text, rawtext, keyword_dict):
             if num_keywords >= 1:
                 classes[clss] = 1
                 snippet_scores.append((rawsentence, num_keywords / len(wordlist)))
-        snippets[clss] = [a[0] for a in sorted(snippet_scores, key=lambda x: x[1], reverse=True)]
+        snippets[clss] = [shorten(a[0], is_title=False) for a in sorted(snippet_scores, key=lambda x: x[1], reverse=True)]
     return classes, snippets
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='%(asctime)s:%(name)s:%(levelname)s: %(message)s')
