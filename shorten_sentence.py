@@ -22,4 +22,6 @@ def shorten(sent, is_title=True):
         sent = re.sub(pat, '', sent)
     for pat in COVID_PATTERNS:
         sent = re.sub(pat, 'コロナ', sent)
+    if is_title and len(sent) < 10 and sent.endswith('について'):
+        sent = sent.rstrip('について')
     return sent.strip()
