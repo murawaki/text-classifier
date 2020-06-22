@@ -5,6 +5,8 @@ import argparse
 import unicodedata
 import json
 import re
+import os
+import sys
 from collections import defaultdict
 
 logger = logging.getLogger(__name__)
@@ -21,6 +23,7 @@ def main():
 
     argparser = argparse.ArgumentParser()
     argparser.add_argument("-b", "--blacklist", help="List of URLs")
+    argparser.add_argument("-k", "--keep-going", dest="keep_going", default=False, action="store_true")
     argparser.add_argument("-o", "--output", help="Output file (JSON)")
     argparser.add_argument("inputs", nargs="+", help="Input files (JSON)")
     args = argparser.parse_args()    
@@ -41,6 +44,9 @@ def main():
     num_bad_urls = 0
     with open(args.output, "w") as of:
         for fp in sorted(args.inputs, key=lambda x: path2date[x], reverse=True):
+            if not os.path.isfile(fp) and args.keep_going:
+                sys.stderr.write("{} not found ... skip\n".format(fp))
+                continue
             with open(fp, "r") as input_file:
                 logger.info("Processing: %s", fp)
                 for line in input_file:

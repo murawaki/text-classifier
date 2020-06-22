@@ -14,7 +14,7 @@ import json
 import datetime
 from collections import defaultdict
 
-from shorten_sentence import shorten
+from preprocess.shorten_sentence import shorten
 
 
 def extract_url_from_url_file(filepath: pathlib.Path) -> str:
@@ -24,8 +24,12 @@ def extract_url_from_url_file(filepath: pathlib.Path) -> str:
 
 def extract_title_from_html_file(filepath: pathlib.Path) -> str:
     with filepath.open() as f:
-        title = bs4.BeautifulSoup(f.read(), "html.parser").title.string
-        return shorten(title)
+        title = bs4.BeautifulSoup(f.read(), "html.parser").title
+        if title is None:
+            return ""
+        else:
+            # return title.string
+            return shorten(title.string)
 
 
 def extract_timestamp_from_file(filepath: pathlib.Path) -> str:
@@ -35,10 +39,19 @@ def extract_timestamp_from_file(filepath: pathlib.Path) -> str:
 if __name__ == "__main__":
     argparser = argparse.ArgumentParser()
     argparser.add_argument("-d", "--directory", default=".", help="Path prefix of XML files")
+    argparser.add_argument("-s", "--sourceinfo", default=None, help="domain labels")
     argparser.add_argument("url_files", help="File paths of input URL files (*.url; one path per line)")
     argparser.add_argument("output_file", help="Output file (JSONL)")
     args = argparser.parse_args()
 
+    sourceinfo = {}
+    if args.sourceinfo is not None:
+        with open(args.sourceinfo, "r") as f:
+            for line in f:
+                line = line.rstrip()
+                domain, sourcelabel = line.split("\t", maxsplit=1)
+                sourceinfo[domain] = sourcelabel
+    
     with open(args.url_files, "r") as f, open(args.output_file, "w") as of:
         for line in f:
             # decompose a url, which is like `./xml/<country>/ja_translated/<domain>/<filename>`, into its parts
@@ -84,6 +97,12 @@ if __name__ == "__main__":
                 "url": orig_url,
                 "domain": domain
             }
+            for _domain, sourcelabel in sourceinfo.items():
+                if domain.rfind(_domain) >= 0:
+                    meta["domain_label"] = sourcelabel
+                    break
+            else:
+                sys.stderr.write(f"unrecognized domain name {domain}\n")
             
             # output the metadata as a JSONL file
             json.dump(meta, of, ensure_ascii=False)
