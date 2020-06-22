@@ -5,7 +5,9 @@ import unicodedata
 COVID_PATTERNS = [re.compile(r'新型コロナウ[イィ]ルス(感染症|肺炎)?'),
                   re.compile(r'COVID[-−]19感染症')]
 DATE_PATTERN = re.compile(r'2020年([1-9]|1[0-2])月([1-9]|1[0-9]|2[0-9]|3[0-1])日')
-SOURCES = [re.compile(r'[-−] Yahoo! JAPAN')]
+SOURCES = [re.compile(r'[-−] Yahoo! JAPAN'),
+           re.compile(r'[-−] Yahoo!ニュース'),
+           re.compile(r'[-−]((The )?New York Times|ニューヨークタイムズ)')]
 TIME_PATTERNS = [re.compile(r'[<\(\[\{]第.+?回[>\)\]\}]'),
                  re.compile(r'第.+?回'),
                  re.compile(r'[<\(\[\{]令和.+?年度[>\)\]\}]'),
