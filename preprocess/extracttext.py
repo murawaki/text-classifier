@@ -1,6 +1,7 @@
 """Extract text data from HTML files in standard format
 """
 
+import sys
 import logging
 import argparse
 import unicodedata
@@ -16,7 +17,11 @@ def to_text(juman, standard_format):
     for text in texts:
         annotation = text.find("Annotation")
         if annotation is None: continue
-        mlist = juman.result(annotation.text)
+        try:
+            mlist = juman.result(annotation.text)
+        except:
+            sys.stderr.write(f"juman failed{annotation}\n")
+            continue
         wordlists.append([unicodedata.normalize("NFKC", m.midasi) for m in mlist.mrph_list()])
         poslists.append([unicodedata.normalize("NFKC", m.hinsi) for m in mlist.mrph_list()])
         rawsentence = text.find("RawString")
@@ -49,7 +54,7 @@ if __name__ == "__main__":
                 etree = ElementTree.parse(f"{args.directory}/{xml_file}")
                 num_pages += 1
             except ElementTree.ParseError:
-                logger.error("XML file broken: %s", xml_file)
+                logging.error("XML file broken: %s", xml_file)
                 num_ignored += 1
                 continue
             wordlists, poslists, rawsentences = to_text(juman, etree)

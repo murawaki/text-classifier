@@ -24,7 +24,7 @@ $(OUTPUT_DIR)/$(1).target.txt : $(INPUT_DIR)/new-html-files-$(1).txt
 	cat $$< | perl -nle '$$$$d="$(DATA_DIR)"; s/^\Q$$$$d\E/./;print;' > $$@ 2>> $(OUTPUT_DIR)/$(1).log
 
 $(OUTPUT_DIR)/$(1).metadata.jsonl : $(SOURCEINFO) $(OUTPUT_DIR)/$(1).target.txt
-	$(PYTHON) -mpreprocess.metadata -d $(DATA_DIR) -s $(SOURCEINFO) $(OUTPUT_DIR)/$(1).target.txt $(OUTPUT_DIR)/$(1).metadata.jsonl.tmp 2>> $(OUTPUT_DIR)/$(1).log
+	$(PYTHON) -mpreprocess.metadata -d $(DATA_DIR) -s $(SOURCEINFO) $(OUTPUT_DIR)/$(1).target.txt $(OUTPUT_DIR)/$(1).metadata.jsonl.tmp 2>> $(OUTPUT_DIR)/$(1).log && \
 	$(PYTHON) preprocess/extracttext.py -d $(DATA_DIR) $(OUTPUT_DIR)/$(1).metadata.jsonl.tmp $(OUTPUT_DIR)/$(1).metadata.jsonl 2>> $(OUTPUT_DIR)/$(1).log
 
 $(OUTPUT_DIR)/$(1).metadata2.jsonl: $(OUTPUT_DIR)/$(1).metadata.jsonl classifiers/keywords.txt

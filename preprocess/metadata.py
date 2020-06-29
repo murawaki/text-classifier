@@ -75,8 +75,8 @@ if __name__ == "__main__":
                 orig_timestamp = extract_timestamp_from_file(orig_filepath)
                 ja_timestamp = extract_timestamp_from_file(ja_filepath)
                 xml_timestamp = extract_timestamp_from_file(xml_filepath)
-            except:
-                sys.stderr.write(f"file not found error...skip: {line}")
+            except Exception as e:
+                sys.stderr.write(f"file not found error...skip: {line}\t{e}\n")
                 continue
 
             # append the metadata
@@ -98,7 +98,7 @@ if __name__ == "__main__":
                 "domain": domain
             }
             for _domain, sourcelabel in sourceinfo.items():
-                if domain.rfind(_domain) >= 0:
+                if domain.endswith(_domain):
                     meta["domain_label"] = sourcelabel
                     break
             else:
