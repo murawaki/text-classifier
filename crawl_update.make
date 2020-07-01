@@ -1,8 +1,7 @@
 
 PYTHON := nice -19 python3
 DATA_DIR := /mnt/hinoki/share/covid19
-# INPUT_DIR := /mnt/hinoki/share/covid19/run
-INPUT_DIR := /mnt/hinoki/share/covid19/run/new-html-files
+INPUT_DIR := /mnt/hinoki/share/covid19/run/new-xml-files
 OUTPUT_DIR := /mnt/hinoki/share/covid19/topics_bert
 BLACKLIST := $(DATA_DIR)/url_black_list.txt
 SOURCEINFO := $(DATA_DIR)/source_info.tsv
@@ -13,14 +12,14 @@ BERT_DIR := data/bert
 BERT_MODEL := $(BERT_DIR)/Japanese_L-12_H-768_A-12_E-30_BPE_transformers
 BERTSIMPLE_MODEL = $(BERT_DIR)/classifier.pth
 
-DAILY_INPUTS = $(wildcard $(INPUT_DIR)/new-html-files-*.txt)
-BASE_NAMES = $(subst new-html-files-,,$(basename $(notdir $(DAILY_INPUTS))))
+DAILY_INPUTS = $(wildcard $(INPUT_DIR)/new-xml-files-202*.txt)
+BASE_NAMES = $(subst new-xml-files-,,$(basename $(notdir $(DAILY_INPUTS))))
 
 GPUID := -1
 
 # $(1): BASE_NAME
 define each_task
-$(OUTPUT_DIR)/$(1).target.txt : $(INPUT_DIR)/new-html-files-$(1).txt
+$(OUTPUT_DIR)/$(1).target.txt : $(INPUT_DIR)/new-xml-files-$(1).txt
 	cat $$< | perl -nle '$$$$d="$(DATA_DIR)"; s/^\Q$$$$d\E/./;print;' > $$@ 2>> $(OUTPUT_DIR)/$(1).log
 
 $(OUTPUT_DIR)/$(1).metadata.jsonl : $(SOURCEINFO) $(OUTPUT_DIR)/$(1).target.txt
