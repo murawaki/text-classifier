@@ -79,6 +79,13 @@ if __name__ == "__main__":
                 sys.stderr.write(f"file not found error...skip: {line}\t{e}\n")
                 continue
 
+
+            # ad-hoc bug fix
+            if domain == "bundle.br":
+                domain = url_parts[0]
+            elif domain == "www.cdc.gov.kr":
+                domain = "www.cdc.go.kr"
+            
             # append the metadata
             meta = {
                 "country": country,

@@ -47,28 +47,32 @@ def main():
             if not os.path.isfile(fp) and args.keep_going:
                 sys.stderr.write("{} not found ... skip\n".format(fp))
                 continue
-            with open(fp, "r") as input_file:
-                logger.info("Processing: %s", fp)
-                for line in input_file:
-                    line = line.strip()
-                    page = json.loads(line)
-                    if page["url"] in registered:
-                        continue
-                    registered[page["url"]] = True
+            try:
+                with open(fp, "r") as input_file:
+                    logger.info("Processing: %s", fp)
+                    for line in input_file:
+                        line = line.strip()
+                        page = json.loads(line)
+                        if page["url"] in registered:
+                            continue
+                        registered[page["url"]] = True
 
-                    # dump matching
-                    # TODO: efficiency
-                    bad_url = False
-                    for keyword in bad_urls:
-                        if keyword in page["url"]:
-                            bad_url = True
-                            break
-                    if bad_url:
-                        num_bad_urls += 1
-                        continue
+                        # dump matching
+                        # TODO: efficiency
+                        bad_url = False
+                        for keyword in bad_urls:
+                            if re.search(keyword, page["url"]):
+                                sys.stderr.write("blacklisted\t{}\tskip\n".format(page["url"]))
+                                bad_url = True
+                                break
+                        if bad_url:
+                            num_bad_urls += 1
+                            continue
 
-                    # output the results into JSONL file
-                    of.write("{}\n".format(json.dumps(page, ensure_ascii=False)))
+                        # output the results into JSONL file
+                        of.write("{}\n".format(json.dumps(page, ensure_ascii=False)))
+            except Exception as e:
+                sys.stderr.write("JSON error {}".format(e))
 
     logger.info("Files: %s", len(args.inputs))
     logger.info("Duplicate: %s", len(registered))
