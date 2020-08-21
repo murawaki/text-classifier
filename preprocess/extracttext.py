@@ -9,12 +9,43 @@ import json
 from xml.etree import ElementTree
 from pyknp import Juman
 from collections import defaultdict
+import pathlib
+import bs4
 
-def to_text(juman, standard_format):
-    "Convert standard format into a simple text (list of word lists)"
+def to_text(juman, standard_format, htmlsentences, htmlfile):
+    '''
+    Convert standard format into a simple text (list of word lists)
+
+    translation HTML was converted to SF
+    during this step, extra sentence splitting is performed, making sentence alignment hard
+    to address this problem, we look at SF's Offset and Length attributes, read the corresponding text chunk in the HTML
+
+    idxmap: idx in SF -> idx in HTML (based on the ja file but the en file has the same number of sentences)
+    '''
+
+    sfoffset = 0
+    htmloffset = 0
+    htmlidx = 0
+    idxmap = []
+
     texts = etree.findall(".//Title") + etree.findall(".//Description") + etree.findall(".//S")
     wordlists, poslists, rawsentences = [], [], []
     for text in texts:
+        rawsentence = text.find("RawString")
+        cur_htmlidx = htmlidx
+        offset, length = int(text.attrib["Offset"]), int(text.attrib["Length"])
+        if offset < 0:
+            raise Exception("no valid offset")
+        htmlfile.seek(offset)
+        dat = htmlfile.read(length)
+        htmlstr = dat.decode("utf-8")
+        sfoffset += len(htmlstr)
+
+        # sys.stderr.write("{}\t{}\t{}\t{}\n".format(sfoffset, htmloffset, rawsentence.text, htmlsentences[htmlidx]))
+        if sfoffset >= htmloffset + len(htmlsentences[htmlidx]):
+            htmloffset += len(htmlsentences[htmlidx])
+            htmlidx += 1            
+        
         annotation = text.find("Annotation")
         if annotation is None: continue
         try:
@@ -24,9 +55,20 @@ def to_text(juman, standard_format):
             continue
         wordlists.append([unicodedata.normalize("NFKC", m.midasi) for m in mlist.mrph_list()])
         poslists.append([unicodedata.normalize("NFKC", m.hinsi) for m in mlist.mrph_list()])
-        rawsentence = text.find("RawString")
+
+        idxmap.append(cur_htmlidx)
         rawsentences.append(rawsentence.text)
-    return wordlists, poslists, rawsentences
+    return wordlists, poslists, rawsentences, idxmap
+
+
+def extract_sentences_from_html_file(filepath: pathlib.Path) -> str:
+    with filepath.open() as f:
+        htmltree = bs4.BeautifulSoup(f.read(), "html.parser")
+        sentences = []
+        for ent in htmltree.find_all('title') + htmltree.find_all('p'):
+            sentences.append(ent.string)
+        return sentences
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='%(asctime)s:%(name)s:%(levelname)s: %(message)s')
@@ -38,6 +80,7 @@ if __name__ == "__main__":
     argparser.add_argument("output_file", help="Output file (JSONL)")
     args = argparser.parse_args()
 
+    data_dir = pathlib.Path(args.directory)
     # initialize juman (used only for parsing standard format)
     juman = Juman("cat")  # use dummy command to avoid installing jumanpp...
 
@@ -48,8 +91,17 @@ if __name__ == "__main__":
         for line in metadata_file:
             line = line.strip()
             page = json.loads(line)
+
+
+            en_filepath = data_dir / page["en_translated"]["file"]
+            en_sentences = extract_sentences_from_html_file(en_filepath)
+            page["en_translated"]["rawsentences"] = en_sentences
+
+            ja_htmlpath = data_dir / page["ja_translated"]["file"]
+            ja_sentences_html = extract_sentences_from_html_file(ja_htmlpath)
+            ja_htmlfile = ja_htmlpath.open('rb')
+
             xml_file = page[args.target]["xml_file"]
-            #print(xml_file)
             try:
                 etree = ElementTree.parse(f"{args.directory}/{xml_file}")
                 num_pages += 1
@@ -57,11 +109,16 @@ if __name__ == "__main__":
                 logging.error("XML file broken: %s", xml_file)
                 num_ignored += 1
                 continue
-            wordlists, poslists, rawsentences = to_text(juman, etree)
+            try:
+                wordlists, poslists, rawsentences, idxmap = to_text(juman, etree, ja_sentences_html, ja_htmlfile)
+            except Exception as e:
+                sys.stderr.write("{}\t{}\n".format(xml_file, e))
+                continue
 
             # output the results into JSONL file
             page["rawsentences"] = rawsentences
             page["wordlists"] = wordlists
             page["poslists"] = poslists
+            page["idxmap"] = idxmap
             json.dump(page, of, ensure_ascii=False)
             of.write("\n")

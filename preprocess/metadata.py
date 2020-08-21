@@ -22,14 +22,16 @@ def extract_url_from_url_file(filepath: pathlib.Path) -> str:
         return f.readline().strip()
 
 
-def extract_title_from_html_file(filepath: pathlib.Path) -> str:
+def extract_title_from_html_file(filepath: pathlib.Path, do_shorten="ja") -> str:
     with filepath.open() as f:
         title = bs4.BeautifulSoup(f.read(), "html.parser").title
         if title is None:
             return ""
         else:
-            # return title.string
-            return shorten(title.string)
+            if do_shorten == "ja":
+                return shorten(title.string)
+            else:
+                return title.string
 
 
 def extract_timestamp_from_file(filepath: pathlib.Path) -> str:
@@ -49,8 +51,8 @@ if __name__ == "__main__":
         with open(args.sourceinfo, "r") as f:
             for line in f:
                 line = line.rstrip()
-                domain, sourcelabel = line.split("\t", maxsplit=1)
-                sourceinfo[domain] = sourcelabel
+                domain, sourcelabel, sourcelabel_en = line.split("\t", maxsplit=2)
+                sourceinfo[domain] = (sourcelabel, sourcelabel_en)
     
     with open(args.url_files, "r") as f, open(args.output_file, "w") as of:
         for line in f:
@@ -64,16 +66,19 @@ if __name__ == "__main__":
             orig_filepath = data_dir / "html" / country / "orig" / domain / url_filename.with_suffix(".html")
             ja_filepath = data_dir / "html" / country / "ja_translated" / domain / url_filename.with_suffix(".html")
             xml_filepath = data_dir / "xml" / country / "ja_translated" / domain / url_filename.with_suffix(".xml")
+            en_filepath = data_dir / "html" / country / "en_translated" / domain / url_filename.with_suffix(".html")
 
             try:
                 # extract metadata by reading the files
                 orig_url = extract_url_from_url_file(url_filepath)
 
-                orig_title = extract_title_from_html_file(orig_filepath)
-                ja_title = extract_title_from_html_file(ja_filepath)
+                orig_title = extract_title_from_html_file(orig_filepath, do_shorten=None)
+                ja_title = extract_title_from_html_file(ja_filepath, do_shorten="ja")
+                en_title = extract_title_from_html_file(en_filepath, do_shorten=None)
 
                 orig_timestamp = extract_timestamp_from_file(orig_filepath)
                 ja_timestamp = extract_timestamp_from_file(ja_filepath)
+                en_timestamp = extract_timestamp_from_file(en_filepath)
                 xml_timestamp = extract_timestamp_from_file(xml_filepath)
             except Exception as e:
                 sys.stderr.write(f"file not found error...skip: {line}\t{e}\n")
@@ -101,12 +106,18 @@ if __name__ == "__main__":
                     "xml_file": str(xml_filepath.relative_to(data_dir)),
                     "xml_timestamp": xml_timestamp
                 },
+                "en_translated": {
+                    "file": str(en_filepath.relative_to(data_dir)),
+                    "title": en_title,
+                    "timestamp": en_timestamp,
+                },
                 "url": orig_url,
                 "domain": domain
             }
-            for _domain, sourcelabel in sourceinfo.items():
+            for _domain, (sourcelabel, sourcelabel_en) in sourceinfo.items():
                 if domain.endswith(_domain):
                     meta["domain_label"] = sourcelabel
+                    meta["domain_label_en"] = sourcelabel_en
                     break
             else:
                 sys.stderr.write(f"unrecognized domain name {domain}\n")
