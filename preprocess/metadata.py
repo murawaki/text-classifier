@@ -28,8 +28,8 @@ def extract_title_from_html_file(filepath: pathlib.Path, do_shorten="ja") -> str
         if title is None:
             return ""
         else:
-            if do_shorten == "ja":
-                return shorten(title.string)
+            if do_shorten in {"ja", "en"}:
+                return shorten(title.string, country=do_shorten)
             else:
                 return title.string
 
@@ -74,7 +74,7 @@ if __name__ == "__main__":
 
                 orig_title = extract_title_from_html_file(orig_filepath, do_shorten=None)
                 ja_title = extract_title_from_html_file(ja_filepath, do_shorten="ja")
-                en_title = extract_title_from_html_file(en_filepath, do_shorten=None)
+                en_title = extract_title_from_html_file(en_filepath, do_shorten="en")
 
                 orig_timestamp = extract_timestamp_from_file(orig_filepath)
                 ja_timestamp = extract_timestamp_from_file(ja_filepath)
