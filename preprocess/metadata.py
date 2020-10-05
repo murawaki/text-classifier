@@ -6,6 +6,7 @@ Requirements:
 """
 
 import sys
+import re
 import os
 import pathlib
 import argparse
@@ -86,7 +87,7 @@ if __name__ == "__main__":
 
 
             # ad-hoc bug fix
-            if domain == "bundle.br":
+            if re.match(r'bundle\...', domain) is not None:
                 domain = url_parts[0]
             elif domain == "www.cdc.gov.kr":
                 domain = "www.cdc.go.kr"
