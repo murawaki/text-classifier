@@ -36,8 +36,8 @@ def run_bert(text_file, classes, bert, tokenizer, batch_size=128, device='cpu'):
             if 'classes' in page:
                 labels.append(torch.tensor([min(1, page['classes'][c]) for c in classes], dtype=float))  # truncate values > 1
             # convert texts into word IDs
-            idlists = tokenizer.batch_encode_plus(wordlists, add_special_tokens=True, pad_to_max_length=True)
-            #print(wordlists)
+            idlists = tokenizer.batch_encode_plus(wordlists, add_special_tokens=True, is_split_into_words=True, padding='longest')
+            # print(wordlists)
             #print(idlists)
             # run BERT to compute embeddings
             cls_embeddings = []  # [CLS] embeddings
